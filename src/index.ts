@@ -1,4 +1,7 @@
 import {App} from "./app";
+import UserRepository from "./repositories/userRepository";
+import { databaseUserInterface } from "./interfaces/userInterfaces";
+import { databaseUserSchema } from "./schemas/userSchemas";
 
 require("dotenv").config();
 

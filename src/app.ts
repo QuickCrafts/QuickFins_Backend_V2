@@ -3,18 +3,22 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import MongoDBClient from "./config/mongoDB.config";
+import { set } from "zod";
 
 export class App {
   private app: Application;
-  private mongoClient: MongoDBClient;
+  private mongoClient: MongoDBClient | null = null;	
 
   constructor(private port?: number | string) {
     this.app = express();
     this.settings();
     this.middlewares();
     this.routes();
-    this.mongoClient = MongoDBClient.getInstance();
     this.setupCloseHandler();
+  }
+
+  private async setMongoClient() {
+    this.mongoClient = await MongoDBClient.getInstance();
   }
 
   settings() {
@@ -54,6 +58,10 @@ export class App {
 
   async initializeMongoDB() {
     try {
+      await this.setMongoClient();
+      if (!this.mongoClient) {
+        throw new Error("MongoDB Client not initialized");
+      }
       await this.mongoClient.connect();
       console.log("MongoDB Successfully connected");
     } catch (error) {
@@ -65,6 +73,9 @@ export class App {
     process.on('SIGINT', async () => {
         console.log('Received SIGINT. Closing MongoDB connection and exiting...');
         try {
+            if (!this.mongoClient) {
+                throw new Error('MongoDB Client not initialized');
+            }
             await this.mongoClient.close();
             console.log('MongoDB connection closed successfully.');
             process.exit(0);

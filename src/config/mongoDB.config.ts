@@ -26,9 +26,10 @@ export class MongoDBClient {
     this.dbName = dbName;
   }
 
-  public static getInstance(): MongoDBClient {
+  public static async getInstance(): Promise<MongoDBClient> {
     if (!MongoDBClient.instance) {
       MongoDBClient.instance = new MongoDBClient();
+      await MongoDBClient.instance.connect();
     }
     return MongoDBClient.instance;
   }
