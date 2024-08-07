@@ -1,8 +1,8 @@
 import { MongoDBClient } from "../config/mongoDB.config";
 import { Collection } from "mongodb";
 import { z } from "zod";
-import { databaseUserInterface } from "../interfaces/userInterfaces";
-import { databaseUserSchema } from "../schemas/userSchemas";
+import { databasePOSTUserInterface, databaseGETUserInterface, databasePUTUserInterface } from "../interfaces/userInterfaces";
+import { databasePOSTUserSchema, databasePUTUserSchema } from "../schemas/userSchemas";
 
 export default class UserRepository {
   private static instance: UserRepository;
@@ -22,9 +22,9 @@ export default class UserRepository {
     return UserRepository.instance;
   }
 
-  public async createUser(user: databaseUserInterface) {
+  public async createUser(user: databasePOSTUserInterface) {
     try {
-      const validatedUser = databaseUserSchema.parse(user);
+      const validatedUser = databasePOSTUserSchema.parse(user);
 
       return await this.db?.insertOne(validatedUser);
     } catch (error) {
@@ -44,7 +44,7 @@ export default class UserRepository {
 
       const getResult = (await this.db?.findOne({
         validatedEmail,
-      })) as databaseUserInterface | null;
+      })) as databaseGETUserInterface | null;
 
       return getResult;
     } catch (error) {
@@ -74,10 +74,10 @@ export default class UserRepository {
     }
   }
 
-  public async updateUserByEmail(email: string, user: databaseUserInterface) {
+  public async updateUserByEmail(email: string, user: databasePUTUserInterface) {
     try {
       const validatedEmail = z.string().email().parse(email);
-      const validatedUser = databaseUserSchema.parse(user);
+      const validatedUser = databasePUTUserSchema.parse(user);
 
       return await this.db?.updateOne(
         { email: validatedEmail },
