@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-const mainUserSchema = z.object({
-  _id: z.object({}),
+const mainDatabaseUserSchema = z.object({
+  authId: z.string(),
   email: z
     .string({ required_error: "Email is required" })
     .email({ message: "Invalid Email" }),
@@ -24,13 +24,16 @@ const mainUserSchema = z.object({
 });
 
 // We don't need to store the password in the database or provide the Id
-export const databasePOSTUserSchema = mainUserSchema.omit({
+export const databasePOSTUserSchema = mainDatabaseUserSchema.omit({
   password: true,
-  _id: true,
 });
 
 // Since we don't store the password, we can't retrieve it
-export const databaseGETUserSchema = mainUserSchema.omit({ password: true });
+export const databaseGETUserSchema = mainDatabaseUserSchema.omit({
+  password: true,
+});
 
 // We make the update schema the same as the post one but with all fields being optional
-export const databasePUTUserSchema = databasePOSTUserSchema.partial();
+export const databasePUTUserSchema = databasePOSTUserSchema
+  .omit({ authId: true })
+  .partial();

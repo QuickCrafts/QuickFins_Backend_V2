@@ -3,11 +3,12 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import MongoDBClient from "./config/mongoDB.config";
-import { set } from "zod";
+import MSALClient from "./config/msAuth.config";
 
 export class App {
   private app: Application;
-  private mongoClient: MongoDBClient | null = null;	
+  private mongoClient: MongoDBClient | null = null;
+  private msalClient: MSALClient | null = null;	
 
   constructor(private port?: number | string) {
     this.app = express();
@@ -17,12 +18,13 @@ export class App {
     this.setupCloseHandler();
   }
 
-  private async setMongoClient() {
+  private async setSingletonClients() {
     this.mongoClient = await MongoDBClient.getInstance();
+    this.msalClient = await MSALClient.getInstance();
   }
 
   settings() {
-    this.app.set("port", this.port || process.env.PORT || 8080);
+    this.app.set("port", this.port || process.env.PORT || 8081);
   }
 
   middlewares() {
@@ -56,9 +58,10 @@ export class App {
     console.log("Cors available!");
   }
 
-  async initializeMongoDB() {
+  async initializeSingletons() {
+
+    await this.setSingletonClients();
     try {
-      await this.setMongoClient();
       if (!this.mongoClient) {
         throw new Error("MongoDB Client not initialized");
       }
@@ -67,6 +70,17 @@ export class App {
     } catch (error) {
       console.log("An Error Occured while connecting to MongoDB", error);
     }
+
+    try {
+      if (!this.msalClient) {
+        throw new Error("MSAL Client not initialized");
+      }
+      console.log("MSAL Successfully initialized");
+    } catch (error) {
+      console.log("An Error Occured while initializing MSAL", error);
+    }
+
+
   }
 
   private setupCloseHandler() {
@@ -87,7 +101,7 @@ export class App {
 }
 
   async start() {
-    await this.initializeMongoDB();
+    await this.initializeSingletons();
     await this.app.listen(this.app.get("port"));
     console.log("Server on port: " + this.app.get("port"));
   }

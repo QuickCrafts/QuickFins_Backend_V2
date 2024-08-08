@@ -2,7 +2,7 @@ import { MongoDBClient } from "../config/mongoDB.config";
 import { Collection } from "mongodb";
 import { z } from "zod";
 import { databasePOSTUserInterface, databaseGETUserInterface, databasePUTUserInterface } from "../interfaces/userInterfaces";
-import { databasePOSTUserSchema, databasePUTUserSchema } from "../schemas/userSchemas";
+import { databasePOSTUserSchema, databasePUTUserSchema } from "../schemas/databaseUserSchemas";
 
 export default class UserRepository {
   private static instance: UserRepository;

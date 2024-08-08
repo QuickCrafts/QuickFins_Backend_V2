@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { databasePOSTUserSchema, databaseGETUserSchema, databasePUTUserSchema } from "../schemas/userSchemas";
+import { databasePOSTUserSchema, databaseGETUserSchema, databasePUTUserSchema } from "../schemas/databaseUserSchemas";
 //We import schemas as the interfaces will be generated from them
 //This lets us keep the schemas and interfaces in sync
 

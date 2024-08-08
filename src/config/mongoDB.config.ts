@@ -37,7 +37,6 @@ export class MongoDBClient {
   async connect() {
     await this.client.connect();
     this.db = this.client.db(this.dbName);
-    console.log("Connected to MongoDB");
   }
 
   getDb(): Db {
