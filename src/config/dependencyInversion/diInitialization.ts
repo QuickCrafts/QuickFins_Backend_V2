@@ -3,6 +3,7 @@ import UserRepository, {IUserRepository} from "../../repositories/userRepository
 import MongoDBClient, {IMongoDBClient} from "../mongoDB.config";
 import MSGraphClient, {IMSGraphClient} from "../msGraph.config";
 import MSAuthClient,{IMSAuthClient} from "../msAuth.config";
+import UserService, {IUserService} from "../../services/userService";
 
 export default async function setupDependencyInjection(){
     // Singleton instances, not initialized yet as they will be initialized in the application start
@@ -17,5 +18,7 @@ export default async function setupDependencyInjection(){
     DependenyInjectionCompositionRoot.register<IMSGraphClient>("msGraphClient", () => msGraphClient);
 
     DependenyInjectionCompositionRoot.register<IMSAuthClient>("msAuthClient", () => msAuthClient);
+
+    DependenyInjectionCompositionRoot.register<IUserService>("userService", UserService, ["userRepository", "msGraphClient", "msAuthClient"]);
 
 }

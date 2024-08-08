@@ -2,7 +2,7 @@ import { Collection, ObjectId } from 'mongodb';
 import { z } from 'zod';
 import UserRepository from '../../src/repositories/userRepository';
 import { IMongoDBClient } from '../../src/config/mongoDB.config';
-import { databasePOSTUserInterface, databasePUTUserInterface } from '../../src/interfaces/userInterfaces';
+import { databasePOSTUserInterface, databasePUTUserInterface } from '../../src/interfaces/databaseUserInterfaces';
 import {describe, expect, beforeEach, jest, it } from '@jest/globals';
 
 // Mock the MongoDB client and collection

@@ -9,7 +9,7 @@ export interface IMSAuthClient {
     valid: boolean;
     token?: string;
   }>;
-};
+}
 
 export default class MSAuthClient {
   private static instance: MSAuthClient;

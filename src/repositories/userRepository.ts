@@ -5,7 +5,7 @@ import {
   databasePOSTUserInterface,
   databaseGETUserInterface,
   databasePUTUserInterface,
-} from "../interfaces/userInterfaces";
+} from "../interfaces/databaseUserInterfaces";
 import {
   databasePOSTUserSchema,
   databasePUTUserSchema,
