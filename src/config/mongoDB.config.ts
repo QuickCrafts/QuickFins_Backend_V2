@@ -1,6 +1,13 @@
-import { MongoClient, Db, ServerApiVersion } from "mongodb";
+import { MongoClient, Db, ServerApiVersion, Collection } from "mongodb";
 
-export class MongoDBClient {
+
+export interface IMongoDBClient {
+  connect(): Promise<void>;
+  getCollection(name: string): Collection;
+  close(): Promise<void>;
+};
+
+export class MongoDBClient implements IMongoDBClient {
   private static instance: MongoDBClient;
   private client: MongoClient;
   private dbName: string;
@@ -39,11 +46,11 @@ export class MongoDBClient {
     this.db = this.client.db(this.dbName);
   }
 
-  getDb(): Db {
+  getCollection(name: string): Collection {
     if (!this.db) {
       throw new Error("Database not connected. Call connect() first.");
     }
-    return this.db;
+    return this.db.collection(name);
   }
 
   async close() {

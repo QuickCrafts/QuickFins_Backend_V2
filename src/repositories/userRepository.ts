@@ -1,32 +1,36 @@
-import { MongoDBClient } from "../config/mongoDB.config";
+import { IMongoDBClient } from "../config/mongoDB.config";
 import { Collection } from "mongodb";
 import { z } from "zod";
-import { databasePOSTUserInterface, databaseGETUserInterface, databasePUTUserInterface } from "../interfaces/userInterfaces";
-import { databasePOSTUserSchema, databasePUTUserSchema } from "../schemas/databaseUserSchemas";
+import {
+  databasePOSTUserInterface,
+  databaseGETUserInterface,
+  databasePUTUserInterface,
+} from "../interfaces/userInterfaces";
+import {
+  databasePOSTUserSchema,
+  databasePUTUserSchema,
+} from "../schemas/databaseUserSchemas";
 
-export default class UserRepository {
-  private static instance: UserRepository;
-  private db: Collection | null = null;
+export interface IUserRepository {
+  createUser(user: databasePOSTUserInterface): Promise<any>;
+  getUserByEmail(email: string): Promise<databaseGETUserInterface | null>;
+  deleteUserByEmail(email: string): Promise<any>;
+  updateUserByEmail(email: string, user: databasePUTUserInterface): Promise<any>;
+};
 
-  private constructor(db: Collection) {
-    this.db = db;
+export default class UserRepository implements IUserRepository {
+  private collection: Collection;
+
+  constructor(db: IMongoDBClient) {
+    this.collection = db.getCollection("users");
   }
 
-  // This helps us implement Singleton Pattern
-  public static async getInstance(): Promise<UserRepository> {
-    if (!UserRepository.instance) {
-      const DBClient = await MongoDBClient.getInstance();
-      const db = DBClient.getDb().collection("users");
-      UserRepository.instance = new UserRepository(db);
-    }
-    return UserRepository.instance;
-  }
 
   public async createUser(user: databasePOSTUserInterface) {
     try {
       const validatedUser = databasePOSTUserSchema.parse(user);
 
-      return await this.db?.insertOne(validatedUser);
+      return await this.collection.insertOne(validatedUser);
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.log("Validation Error", error.errors);
@@ -42,7 +46,7 @@ export default class UserRepository {
     try {
       const validatedEmail = z.string().email().parse(email);
 
-      const getResult = (await this.db?.findOne({
+      const getResult = (await this.collection.findOne({
         validatedEmail,
       })) as databaseGETUserInterface | null;
 
@@ -62,7 +66,7 @@ export default class UserRepository {
     try {
       const validatedEmail = z.string().email().parse(email);
 
-      return await this.db?.deleteOne({ validatedEmail });
+      return await this.collection.deleteOne({ validatedEmail });
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.log("Validation Error, Invalid Email", error.errors);
@@ -74,12 +78,18 @@ export default class UserRepository {
     }
   }
 
-  public async updateUserByEmail(email: string, user: databasePUTUserInterface) {
+  public async updateUserByEmail(
+    email: string,
+    user: databasePUTUserInterface
+  ) {
     try {
       const validatedEmail = z.string().email().parse(email);
       const validatedUser = databasePUTUserSchema.parse(user);
+      if (Object.keys(validatedUser).length === 0) {
+        throw new Error("No valid fields to update");
+      }
 
-      return await this.db?.updateOne(
+      return await this.collection.updateOne(
         { email: validatedEmail },
         { $set: validatedUser }
       );

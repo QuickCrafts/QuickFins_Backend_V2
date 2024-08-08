@@ -2,13 +2,12 @@ import express, { Application } from "express";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import MongoDBClient from "./config/mongoDB.config";
-import MSALClient from "./config/msAuth.config";
+import DependenyInjectionCompositionRoot from "./config/dependencyInversion/diCompositionRoot";
+import {IMongoDBClient} from "./config/mongoDB.config";
+import { IMSGraphClient } from "./config/msGraph.config";
 
 export class App {
   private app: Application;
-  private mongoClient: MongoDBClient | null = null;
-  private msalClient: MSALClient | null = null;	
 
   constructor(private port?: number | string) {
     this.app = express();
@@ -16,11 +15,6 @@ export class App {
     this.middlewares();
     this.routes();
     this.setupCloseHandler();
-  }
-
-  private async setSingletonClients() {
-    this.mongoClient = await MongoDBClient.getInstance();
-    this.msalClient = await MSALClient.getInstance();
   }
 
   settings() {
@@ -59,46 +53,38 @@ export class App {
   }
 
   async initializeSingletons() {
+    const mongoClient = DependenyInjectionCompositionRoot.resolve<IMongoDBClient>('mongodbClient');
+    const msGraphClient = DependenyInjectionCompositionRoot.resolve<IMSGraphClient>('msGraphClient');
 
-    await this.setSingletonClients();
     try {
-      if (!this.mongoClient) {
-        throw new Error("MongoDB Client not initialized");
-      }
-      await this.mongoClient.connect();
+      await mongoClient.connect();
       console.log("MongoDB Successfully connected");
     } catch (error) {
-      console.log("An Error Occured while connecting to MongoDB", error);
+      console.log("An Error Occurred while connecting to MongoDB", error);
     }
 
     try {
-      if (!this.msalClient) {
-        throw new Error("MSAL Client not initialized");
-      }
-      console.log("MSAL Successfully initialized");
+      await msGraphClient.initialize();
+      console.log("MSGraph Successfully initialized");
     } catch (error) {
-      console.log("An Error Occured while initializing MSAL", error);
+      console.log("An Error Occurred while initializing MSAL", error);
     }
-
-
   }
 
   private setupCloseHandler() {
     process.on('SIGINT', async () => {
-        console.log('Received SIGINT. Closing MongoDB connection and exiting...');
-        try {
-            if (!this.mongoClient) {
-                throw new Error('MongoDB Client not initialized');
-            }
-            await this.mongoClient.close();
-            console.log('MongoDB connection closed successfully.');
-            process.exit(0);
-        } catch (error) {
-            console.error('Error while closing MongoDB connection:', error);
-            process.exit(1);
-        }
+      console.log('Received SIGINT. Closing MongoDB connection and exiting...');
+      try {
+        const mongoClient = DependenyInjectionCompositionRoot.resolve<IMongoDBClient>('mongodbClient');
+        await mongoClient.close();
+        console.log('MongoDB connection closed successfully.');
+        process.exit(0);
+      } catch (error) {
+        console.error('Error while closing MongoDB connection:', error);
+        process.exit(1);
+      }
     });
-}
+  }
 
   async start() {
     await this.initializeSingletons();

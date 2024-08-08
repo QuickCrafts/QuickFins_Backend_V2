@@ -1,5 +1,16 @@
 import msal from "@azure/msal-node";
 
+export interface IMSAuthClient {
+  getToken(): Promise<msal.AuthenticationResult | null>;
+  validateUserCredentials(
+    email: string,
+    password: string
+  ): Promise<{
+    valid: boolean;
+    token?: string;
+  }>;
+};
+
 export default class MSAuthClient {
   private static instance: MSAuthClient;
   private applicationMSALObject: msal.ConfidentialClientApplication;
@@ -76,23 +87,33 @@ export default class MSAuthClient {
     }
   }
 
-  public async validateUserCredentials(email: string, password: string): Promise<boolean> {
-    const formattedEmail = email.replace("@", "_") + "#EXT#@quickfins.onmicrosoft.com";
+  public async validateUserCredentials(
+    email: string,
+    password: string
+  ): Promise<{
+    valid: boolean;
+    token?: string;
+  }> {
+    const formattedEmail =
+      email.replace("@", "_") + "#EXT#@quickfins.onmicrosoft.com";
     const usernamePasswordRequest = {
       scopes: ["https://graph.microsoft.com/.default"],
       username: formattedEmail,
-      password: password
+      password: password,
     };
 
     try {
-      const response = await this.applicationMSALObject.acquireTokenByUsernamePassword(usernamePasswordRequest);
+      const response =
+        await this.applicationMSALObject.acquireTokenByUsernamePassword(
+          usernamePasswordRequest
+        );
       if (!response) {
-        return false
-      };
-      return !!response.accessToken;
+        return { valid: false };
+      }
+      return { valid: !!response.accessToken, token: response.accessToken };
     } catch (error) {
       console.error("Authentication failed:", error);
-      return false;
+      return { valid: false };
     }
   }
 }

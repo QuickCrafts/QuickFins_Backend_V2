@@ -2,16 +2,27 @@ import { Client } from "@microsoft/microsoft-graph-client";
 import MSAuthClient from "./msAuth.config";
 import { createAuthUserInterface } from "../interfaces/authUserInterfaces";
 
+export interface IMSGraphClient {
+  initialize(): Promise<void>;
+  getUsers(): Promise<any>;
+  getUserById(userId: string): Promise<any>;
+  createUser(userDetails: createAuthUserInterface): Promise<any>;
+  deleteUser(userId: string): Promise<boolean>;
+}
+
 export default class MSGraphClient {
   private static instance: MSGraphClient;
   private MSAuthClient: MSAuthClient | null = null;
   private client: Client | null = null;
 
-  private constructor() {
+  private constructor() {}
+
+  public async initialize(): Promise<void> {
     this.MSAuthClient = MSAuthClient.getInstance();
     if (!this.MSAuthClient) {
       throw new Error("Error creating MSAL object");
     }
+
     this.client = Client.init({
       authProvider: async (done) => {
         try {

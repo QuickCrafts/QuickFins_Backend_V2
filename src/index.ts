@@ -1,11 +1,10 @@
 import { App } from "./app";
-import MSGraphClient from "./config/msGraph.config";
-import UserRpository from "./repositories/userRepository";
-import MSAuthClient from "./config/msAuth.config";
+import setupDependencyInjection from "./config/dependencyInversion/diInitialization";
 
 require("dotenv").config();
 
 async function main() {
+  await setupDependencyInjection();
   const app = new App(process.env.APP_PORT);
   await app.start();
 
