@@ -1,10 +1,7 @@
 import { IUserRepository } from "../repositories/userRepository";
 import { IMSGraphClient } from "../config/msGraph.config";
 import { IMSAuthClient } from "../config/msAuth.config";
-import {
-  databasePOSTUserInterface,
-  databaseGETUserInterface,
-} from "../interfaces/databaseUserInterfaces";
+import { databaseGETUserInterface } from "../interfaces/databaseUserInterfaces";
 import { completePOSTUserInterface } from "../interfaces/completeUserInterfaces";
 import {
   databaseGETUserSchema,
@@ -73,9 +70,8 @@ export default class UserService implements IUserService {
 
   public async deleteUserByEmail(authId: string, email: string) {
     try {
-      const authDeletionResult = await this.msGraphClient.deleteUser(authId);
-      const databaseDeletionResult =
-        await this.userRepository.deleteUserByEmail(email);
+      await this.msGraphClient.deleteUser(authId);
+      this.userRepository.deleteUserByEmail(email);
       return { success: true };
     } catch (error) {
       console.log("An Error Occured while deleting user", error);
@@ -83,9 +79,15 @@ export default class UserService implements IUserService {
     }
   }
 
+  public async updateUser() {
+    try {
+    } catch (error) {}
+  }
+
   public async getUsers() {
     try {
-      return await this.msGraphClient.getUsers();
+      const getUsersResult = await this.userRepository.getUsers();
+      return getUsersResult;
     } catch (error) {
       console.log("An Error Occured while fetching users", error);
       throw error;

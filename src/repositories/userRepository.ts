@@ -15,8 +15,12 @@ export interface IUserRepository {
   createUser(user: databasePOSTUserInterface): Promise<any>;
   getUserByEmail(email: string): Promise<databaseGETUserInterface | null>;
   deleteUserByEmail(email: string): Promise<any>;
-  updateUserByEmail(email: string, user: databasePUTUserInterface): Promise<any>;
-};
+  updateUserByEmail(
+    email: string,
+    user: databasePUTUserInterface
+  ): Promise<any>;
+  getUsers(): Promise<any>;
+}
 
 export default class UserRepository implements IUserRepository {
   private collection: Collection;
@@ -24,7 +28,6 @@ export default class UserRepository implements IUserRepository {
   constructor(db: IMongoDBClient) {
     this.collection = db.getCollection("users");
   }
-
 
   public async createUser(user: databasePOSTUserInterface) {
     try {
@@ -38,6 +41,16 @@ export default class UserRepository implements IUserRepository {
         console.log("An Error Occured while creating user", error);
       }
 
+      throw error;
+    }
+  }
+
+  public async getUsers() {
+    try {
+      const users = await this.collection.find().toArray();
+      return users;
+    } catch (error) {
+      console.log("An Error Occured while creating user", error);
       throw error;
     }
   }
