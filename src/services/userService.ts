@@ -1,14 +1,13 @@
 import { IUserRepository } from "../repositories/userRepository";
 import { IMSGraphClient } from "../config/msGraph.config";
 import { IMSAuthClient } from "../config/msAuth.config";
+import { IAuthRepository } from "../repositories/authRepository";
 import { databaseGETUserInterface } from "../interfaces/databaseUserInterfaces";
 import { completePOSTUserInterface } from "../interfaces/completeUserInterfaces";
-import {
-  databaseGETUserSchema,
-  databasePOSTUserSchema,
-  databasePUTUserSchema,
-} from "../schemas/databaseUserSchemas";
+import { databasePOSTUserSchema } from "../schemas/databaseUserSchemas";
 import { createAuthUserSchema } from "../schemas/authUserSchemas";
+import { mailModule } from "../config/mailer.config";
+import { resetPasswordEmail } from "../schemas/emails/authEmailSchemas";
 
 export interface IUserService {
   createUser(user: completePOSTUserInterface): Promise<any>;
@@ -19,19 +18,26 @@ export interface IUserService {
     email: string,
     password: string
   ): Promise<{ valid: boolean; token?: string }>;
+  requestPasswordReset(email: string): Promise<any>;
+  resetPassword(otp: string, newPassword: string): Promise<any>;
+  verifyToken(token: string): Promise<any>;
+  createToken(databaseId: string): Promise<any>;
 }
 
 export default class UserService implements IUserService {
+  private authRepository: IAuthRepository;
   private userRepository: IUserRepository;
   private msGraphClient: IMSGraphClient;
   private msAuthClient: IMSAuthClient;
 
   constructor(
     userRepository: IUserRepository,
+    authRepository: IAuthRepository,
     msGraphClient: IMSGraphClient,
     msAuthClient: IMSAuthClient
   ) {
     this.userRepository = userRepository;
+    this.authRepository = authRepository;
     this.msGraphClient = msGraphClient;
     this.msAuthClient = msAuthClient;
   }
@@ -99,6 +105,65 @@ export default class UserService implements IUserService {
       return await this.msAuthClient.validateUserCredentials(email, password);
     } catch (error) {
       console.log("An Error Occured while verifying credentials", error);
+      throw error;
+    }
+  }
+
+  public async requestPasswordReset(email: string) {
+    try {
+      const otp = await this.authRepository.createOTP(email);
+      const emailHtml = resetPasswordEmail(otp);
+      const emailResult = await mailModule().sendMail({
+        from: "Quickfins confirmación de creación de cuenta <info@quickfins.co>",
+        to: email,
+        subject: "Reset Password",
+        html: emailHtml,
+      });
+      return emailResult;
+    } catch (error) {
+      console.log("An Error Occured while resetting password", error);
+      throw error;
+    }
+  }
+
+  public async resetPassword(otp: string, newPassword: string) {
+    try {
+      const email = await this.authRepository.getOTP(otp);
+      if (!email) {
+        throw new Error("Invalid OTP");
+      }
+
+      const verifyResult = await this.authRepository.verifyOTP(email, otp);
+      if (!verifyResult) {
+        throw new Error("Invalid OTP");
+      }
+      const getResult = await this.userRepository.getUserByEmail(email);
+      if (!getResult) {
+        throw new Error("User not found");
+      }
+      const userId = getResult.authId;
+      await this.msGraphClient.changePassword(userId, newPassword);
+      return email;
+    } catch (error) {
+      console.log("An Error Occured while resetting password", error);
+      throw error;
+    }
+  }
+
+  public async verifyToken(token: string) {
+    try {
+      return await this.authRepository.verifyToken(token);
+    } catch (error) {
+      console.log("An Error Occured while verifying token", error);
+      throw error;
+    }
+  }
+
+  public async createToken(databaseId: string) {
+    try {
+      return await this.authRepository.createToken(databaseId);
+    } catch (error) {
+      console.log("An Error Occured while creating token", error);
       throw error;
     }
   }

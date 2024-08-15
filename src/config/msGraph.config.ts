@@ -8,6 +8,7 @@ export interface IMSGraphClient {
   getUserById(userId: string): Promise<any>;
   createUser(userDetails: createAuthUserInterface): Promise<any>;
   deleteUser(userId: string): Promise<boolean>;
+  changePassword(userId: string, newPassword: string): Promise<void>;
 }
 
 export default class MSGraphClient {
@@ -101,6 +102,20 @@ export default class MSGraphClient {
       return true;
     } catch (error) {
       console.error("Error deleting user:", error);
+      throw error;
+    }
+  }
+
+  public async changePassword(userId: string, newPassword: string) {
+    try {
+      const passwordProfile = {
+        password: newPassword,
+        forceChangePasswordNextSignIn: false,
+      };
+
+      await this.client!.api(`/users/${userId}`).patch({ passwordProfile });
+    } catch (error) {
+      console.error("Error changing password:", error);
       throw error;
     }
   }

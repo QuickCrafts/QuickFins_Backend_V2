@@ -5,6 +5,8 @@ import cors from "cors";
 import DependenyInjectionCompositionRoot from "./config/dependencyInversion/diCompositionRoot";
 import {IMongoDBClient} from "./config/mongoDB.config";
 import { IMSGraphClient } from "./config/msGraph.config";
+import { IUserController } from "./controllers/userController";
+import {createUserRouter} from "./routes/userRoutes.routes";
 
 export class App {
   private app: Application;
@@ -36,10 +38,12 @@ export class App {
   }
 
   routes() {
+    const userController = DependenyInjectionCompositionRoot.resolve<IUserController>('userController');
     // this.app.use("/api", Route);
     this.app.get("/", (req, res) => {
       res.send("Welcome to QuickFins v2 Backend!");
     });
+    this.app.use("/api/user", createUserRouter(userController));
   }
 
   useCors() {

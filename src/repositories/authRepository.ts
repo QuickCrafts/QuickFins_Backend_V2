@@ -1,11 +1,15 @@
 import { IMongoDBClient } from "../config/mongoDB.config";
 import { Collection } from "mongodb";
 import { createOTP } from "../utils/otpModule";
+import jwt from "jsonwebtoken";
 
 export interface IAuthRepository {
   createOTP(email: string): Promise<any>;
   getOTP(email: string): Promise<any>;
   deleteOTP(email: string): Promise<any>;
+  verifyOTP(email: string, otp: string): Promise<any>;
+  createToken(email: string): Promise<any>;
+  verifyToken(token: string): Promise<any>;
 }
 
 export default class AuthRepository implements IAuthRepository {
@@ -58,6 +62,21 @@ export default class AuthRepository implements IAuthRepository {
     try {
       const result = await this.collection.findOneAndDelete({ email, otp });
       return !!result!.value;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async createToken(databaseId: string): Promise<string> {
+    return jwt.sign({ databaseId }, process.env.JWT_SECRET!, {
+      expiresIn: "7d",
+    });
+  }
+
+  async verifyToken(token: string): Promise<boolean> {
+    try {
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET!);
+      return !!decodedToken;
     } catch (error) {
       return false;
     }
