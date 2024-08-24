@@ -36,6 +36,10 @@ class DependenyInjectionCompositionRoot {
       throw new Error(`Invalid registration for ${name}`);
     }
   }
+
+  static listCurrentRegistrations(): void {
+    console.log(this.instances);
+  }
 }
 
 export default DependenyInjectionCompositionRoot;

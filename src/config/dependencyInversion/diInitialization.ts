@@ -16,8 +16,6 @@ import UserController, {
 export default async function setupDependencyInjection() {
   // Singleton instances, not initialized yet as they will be initialized in the application start
   const mongoDBClient = await MongoDBClient.getInstance();
-  const msGraphClient = MSGraphClient.getInstance();
-  const msAuthClient = MSAuthClient.getInstance();
 
   DependenyInjectionCompositionRoot.register<IMongoDBClient>(
     "mongodbClient",
@@ -36,15 +34,17 @@ export default async function setupDependencyInjection() {
     ["mongodbClient"]
   );
 
-  DependenyInjectionCompositionRoot.register<IMSGraphClient>(
-    "msGraphClient",
-    () => msGraphClient
-  );
-
   DependenyInjectionCompositionRoot.register<IMSAuthClient>(
     "msAuthClient",
-    () => msAuthClient
+    MSAuthClient
   );
+
+  DependenyInjectionCompositionRoot.register<IMSGraphClient>(
+    "msGraphClient",
+    MSGraphClient,
+    ["msAuthClient"]
+  );
+
 
   DependenyInjectionCompositionRoot.register<IUserService>(
     "userService",

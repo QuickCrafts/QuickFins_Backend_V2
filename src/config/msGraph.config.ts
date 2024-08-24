@@ -1,9 +1,8 @@
 import { Client } from "@microsoft/microsoft-graph-client";
-import MSAuthClient from "./msAuth.config";
+import MSAuthClient, { IMSAuthClient } from "./msAuth.config";
 import { createAuthUserInterface } from "../interfaces/authUserInterfaces";
 
 export interface IMSGraphClient {
-  initialize(): Promise<void>;
   getUsers(): Promise<any>;
   getUserById(userId: string): Promise<any>;
   createUser(userDetails: createAuthUserInterface): Promise<any>;
@@ -11,23 +10,18 @@ export interface IMSGraphClient {
   changePassword(userId: string, newPassword: string): Promise<void>;
 }
 
-export default class MSGraphClient {
-  private static instance: MSGraphClient;
-  private MSAuthClient: MSAuthClient | null = null;
-  private client: Client | null = null;
+export default class MSGraphClient implements IMSGraphClient {
+  private client!: Client;
 
-  private constructor() {}
-
-  public async initialize(): Promise<void> {
-    this.MSAuthClient = MSAuthClient.getInstance();
-    if (!this.MSAuthClient) {
-      throw new Error("Error creating MSAL object");
+  constructor(private msAuthClient: IMSAuthClient) {
+    if (!this.msAuthClient) {
+      throw new Error("MSAuthClient is not provided");
     }
 
     this.client = Client.init({
       authProvider: async (done) => {
         try {
-          const token = await this.MSAuthClient!.getToken();
+          const token = await this.msAuthClient.getToken();
           if (token) {
             done(null, token.accessToken);
           } else {
@@ -40,13 +34,6 @@ export default class MSGraphClient {
         }
       },
     });
-  }
-
-  public static getInstance(): MSGraphClient {
-    if (!MSGraphClient.instance) {
-      MSGraphClient.instance = new MSGraphClient();
-    }
-    return MSGraphClient.instance;
   }
 
   public async getUsers() {
@@ -108,12 +95,23 @@ export default class MSGraphClient {
 
   public async changePassword(userId: string, newPassword: string) {
     try {
+      const token = await this.msAuthClient.getToken();
+      if (!token) {
+        throw new Error("Failed to acquire token");
+      }
+      console.log(
+        "Token claims:",
+        JSON.parse(atob(token.accessToken.split(".")[1]))
+      );
       const passwordProfile = {
         password: newPassword,
         forceChangePasswordNextSignIn: false,
       };
 
-      await this.client!.api(`/users/${userId}`).patch({ passwordProfile });
+      const response = await this.client!.api(`/users/${userId}`).patch({
+        passwordProfile,
+      });
+      console.log("Password change response:", response);
     } catch (error) {
       console.error("Error changing password:", error);
       throw error;

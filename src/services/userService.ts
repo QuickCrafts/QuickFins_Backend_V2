@@ -12,6 +12,7 @@ import { resetPasswordEmail } from "../schemas/emails/authEmailSchemas";
 export interface IUserService {
   createUser(user: completePOSTUserInterface): Promise<any>;
   getUserByEmail(email: string): Promise<databaseGETUserInterface | null>;
+  getUserById(id: string): Promise<databaseGETUserInterface | null>;
   deleteUserByEmail(authId: string, email: string): Promise<any>;
   getUsers(): Promise<any>;
   verifyCredentials(
@@ -62,6 +63,15 @@ export default class UserService implements IUserService {
     } catch (error) {
       console.log("An Error Occured while creating user", error);
       return { success: false, error };
+    }
+  }
+
+  public async getUserById(id: string) {
+    try {
+      return await this.userRepository.getUserById(id);
+    } catch (error) {
+      console.log("An Error Occured while retrieving user from id", error);
+      throw error;
     }
   }
 
@@ -130,12 +140,13 @@ export default class UserService implements IUserService {
     try {
       const email = await this.authRepository.getOTP(otp);
       if (!email) {
-        throw new Error("Invalid OTP");
+        throw new Error("Invalid OTP, couldn't get email");
       }
+      
 
       const verifyResult = await this.authRepository.verifyOTP(email, otp);
       if (!verifyResult) {
-        throw new Error("Invalid OTP");
+        throw new Error("Couldn't verify OTP");
       }
       const getResult = await this.userRepository.getUserByEmail(email);
       if (!getResult) {
@@ -152,7 +163,12 @@ export default class UserService implements IUserService {
 
   public async verifyToken(token: string) {
     try {
-      return await this.authRepository.verifyToken(token);
+      const verifyResult = await this.authRepository.verifyToken(token);
+      const userId = verifyResult.databaseId;
+      const getResult = await this.userRepository.getUserById(userId);
+      if(getResult) {
+        return {isValid: true, id: verifyResult.databaseId};
+      }
     } catch (error) {
       console.log("An Error Occured while verifying token", error);
       throw error;

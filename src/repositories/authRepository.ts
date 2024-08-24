@@ -1,7 +1,7 @@
 import { IMongoDBClient } from "../config/mongoDB.config";
 import { Collection } from "mongodb";
 import { createOTP } from "../utils/otpModule";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 export interface IAuthRepository {
   createOTP(email: string): Promise<any>;
@@ -35,22 +35,22 @@ export default class AuthRepository implements IAuthRepository {
         $set: {
           email,
           otp,
-          createdAt: new Date(),
+          createdAt: {type:Date, default: new Date(), expires: 10800},
         },
       },
       { upsert: true, returnDocument: "after" }
     );
 
-    if (!result!.value) {
+    if (!result) {
       throw new Error("Failed to create OTP");
     }
 
     return otp;
   }
 
-  async getOTP(email: string): Promise<string | null> {
-    const result = await this.collection.findOne({ email });
-    return result ? result.otp : null;
+  async getOTP(otp: string): Promise<string | null> {
+    const result = await this.collection.findOne({ otp });
+    return result?.email;
   }
 
   async deleteOTP(email: string): Promise<boolean> {
@@ -61,7 +61,10 @@ export default class AuthRepository implements IAuthRepository {
   async verifyOTP(email: string, otp: string): Promise<boolean> {
     try {
       const result = await this.collection.findOneAndDelete({ email, otp });
-      return !!result!.value;
+      if(result === null) {
+        return false;
+      }
+      return true;
     } catch (error) {
       return false;
     }
@@ -73,10 +76,13 @@ export default class AuthRepository implements IAuthRepository {
     });
   }
 
-  async verifyToken(token: string): Promise<boolean> {
+  async verifyToken(token: string): Promise<string | JwtPayload |false> {
     try {
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET!);
-      return !!decodedToken;
+      if(decodedToken === undefined) {
+        return false;
+      }
+      return decodedToken;
     } catch (error) {
       return false;
     }

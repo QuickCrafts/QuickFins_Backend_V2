@@ -16,7 +16,7 @@ export default class UserController implements IUserController {
     this.userService = userService;
   }
 
-  public async RegisterUser(req: Request, res: Response): Promise<void> {
+  public RegisterUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const user: completePOSTUserInterface = req.body;
       const createResult = await this.userService.createUser(user);
@@ -26,21 +26,28 @@ export default class UserController implements IUserController {
         token: token,
       });
     } catch (error) {
-      res.status(400).send("User registration failed");
+      console.log(error);
+      res
+        .status(400)
+        .send({ message: "User registration failed", error: error });
     }
-  }
+  };
 
-  public async RecoverPassword(req: Request, res: Response): Promise<void> {
+  public RecoverPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const email = req.body.email;
       await this.userService.requestPasswordReset(email);
       res.status(200).send("Password reset email sent");
     } catch (error) {
-      res.status(400).send("Password reset email failed");
+      console.log(error);
+      res.status(400).send({message: "Password reset email failed", error: error});
     }
-  }
+  };
 
-  public async ResetPassword(req: Request, res: Response): Promise<void> {
+  public ResetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       const otp = req.body.otp;
       const newPassword = req.body.newPassword;
@@ -49,15 +56,16 @@ export default class UserController implements IUserController {
     } catch (error) {
       res.status(400).send("Password reset failed");
     }
-  }
+  };
 
-  public async ValidateToken(req: Request, res: Response): Promise<void> {
+  public ValidateToken = async (req: Request, res: Response): Promise<void> => {
     try {
       const token = req.body.token;
-      await this.userService.verifyToken(token);
-      res.status(200).send("Token is valid");
+      const verifyResult = await this.userService.verifyToken(token);
+      console.log(verifyResult);
+      res.status(200).send({message:"Token is valid", isValid:true, id:verifyResult.id});
     } catch (error) {
-      res.status(401).send("Token is invalid");
+      res.status(401).send({message:"Token is invalid", isValid:false});
     }
-  }
+  };
 }

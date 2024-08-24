@@ -1,5 +1,5 @@
 import { IMongoDBClient } from "../config/mongoDB.config";
-import { Collection } from "mongodb";
+import { Collection, ObjectId } from "mongodb";
 import { z } from "zod";
 import {
   databasePOSTUserInterface,
@@ -14,6 +14,7 @@ import {
 export interface IUserRepository {
   createUser(user: databasePOSTUserInterface): Promise<any>;
   getUserByEmail(email: string): Promise<databaseGETUserInterface | null>;
+  getUserById(id: string): Promise<databaseGETUserInterface | null>;
   deleteUserByEmail(email: string): Promise<any>;
   updateUserByEmail(
     email: string,
@@ -55,14 +56,34 @@ export default class UserRepository implements IUserRepository {
     }
   }
 
+  public async getUserById(id: string) {
+    try {
+      const idObject = new ObjectId(id);
+      const getResult = (await this.collection.findOne({
+        _id:idObject,
+      })) as databaseGETUserInterface | null;
+
+      return getResult;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.log("Validation Error, Invalid ID", error.errors);
+      } else {
+        console.log("An Error Occured while retrieving user from ID", error);
+      }
+
+      throw error;
+    }
+  }
+
   public async getUserByEmail(email: string) {
     try {
       const validatedEmail = z.string().email().parse(email);
 
       const getResult = (await this.collection.findOne({
-        validatedEmail,
+        email:validatedEmail,
       })) as databaseGETUserInterface | null;
 
+      console.log(getResult);
       return getResult;
     } catch (error) {
       if (error instanceof z.ZodError) {

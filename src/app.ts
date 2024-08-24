@@ -6,6 +6,7 @@ import DependenyInjectionCompositionRoot from "./config/dependencyInversion/diCo
 import {IMongoDBClient} from "./config/mongoDB.config";
 import { IMSGraphClient } from "./config/msGraph.config";
 import { IUserController } from "./controllers/userController";
+import { IMSAuthClient } from "./config/msAuth.config";
 import {createUserRouter} from "./routes/userRoutes.routes";
 
 export class App {
@@ -39,7 +40,6 @@ export class App {
 
   routes() {
     const userController = DependenyInjectionCompositionRoot.resolve<IUserController>('userController');
-    // this.app.use("/api", Route);
     this.app.get("/", (req, res) => {
       res.send("Welcome to QuickFins v2 Backend!");
     });
@@ -56,24 +56,6 @@ export class App {
     console.log("Cors available!");
   }
 
-  async initializeSingletons() {
-    const mongoClient = DependenyInjectionCompositionRoot.resolve<IMongoDBClient>('mongodbClient');
-    const msGraphClient = DependenyInjectionCompositionRoot.resolve<IMSGraphClient>('msGraphClient');
-
-    try {
-      await mongoClient.connect();
-      console.log("MongoDB Successfully connected");
-    } catch (error) {
-      console.log("An Error Occurred while connecting to MongoDB", error);
-    }
-
-    try {
-      await msGraphClient.initialize();
-      console.log("MSGraph Successfully initialized");
-    } catch (error) {
-      console.log("An Error Occurred while initializing MSAL", error);
-    }
-  }
 
   private setupCloseHandler() {
     process.on('SIGINT', async () => {
@@ -91,8 +73,8 @@ export class App {
   }
 
   async start() {
-    await this.initializeSingletons();
     await this.app.listen(this.app.get("port"));
     console.log("Server on port: " + this.app.get("port"));
+    //console.log(DependenyInjectionCompositionRoot.listCurrentRegistrations());
   }
 }

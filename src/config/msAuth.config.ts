@@ -11,23 +11,15 @@ export interface IMSAuthClient {
   }>;
 }
 
-export default class MSAuthClient {
-  private static instance: MSAuthClient;
-  private applicationMSALObject: msal.ConfidentialClientApplication;
+export default class MSAuthClient implements IMSAuthClient {
+  private applicationMSALObject!: msal.ConfidentialClientApplication;
 
-  private constructor() {
-    const potentialMSQLObj = this.setUpMSALObject();
-    if (!potentialMSQLObj == null) {
+  constructor() {
+    const potentialMSALObj = this.setUpMSALObject();
+    if (potentialMSALObj === null) {
       throw new Error("Error creating MSAL object");
     }
-    this.applicationMSALObject = this.setUpMSALObject()!;
-  }
-
-  public static getInstance(): MSAuthClient {
-    if (!MSAuthClient.instance) {
-      MSAuthClient.instance = new MSAuthClient();
-    }
-    return MSAuthClient.instance;
+    this.applicationMSALObject = potentialMSALObj;
   }
 
   private setUpMSALObject(): msal.ConfidentialClientApplication | null {
@@ -68,7 +60,8 @@ export default class MSAuthClient {
     }
   }
 
-  public async getToken(): Promise<msal.AuthenticationResult | null> {
+
+  public getToken= async(): Promise<msal.AuthenticationResult | null> => {
     const clientCredentialsRequest = {
       scopes: ["https://graph.microsoft.com/.default"],
       skipCache: false,
